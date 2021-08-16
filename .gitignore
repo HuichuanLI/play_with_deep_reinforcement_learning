@@ -2,3 +2,7 @@
 .DS_Store
 
 Q-learning/.idea/
+
+Q_learning_update/__pycache__/
+
+.idea/
