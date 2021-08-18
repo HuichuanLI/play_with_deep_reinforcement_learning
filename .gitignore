@@ -10,3 +10,7 @@ Q_learning_update/__pycache__/
 Sara_learning/__pycache__/
 
 Sarsa_lambda_learning/__pycache__/
+
+DeepQNet/.ipynb_checkpoints/
+
+DeepQNet/__pycache__/

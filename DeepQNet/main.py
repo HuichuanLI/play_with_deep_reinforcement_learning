@@ -4,7 +4,7 @@
 # @File : main.py
 # @Software: PyCharm
 from maze import Maze
-from Q_learning import QLearningTable
+from DeepQN import DeepQNetwork
 
 
 def update():
@@ -17,13 +17,15 @@ def update():
             env.render()
 
             # RL choose action based on observation
-            action = RL.choose_action(str(observation))
+            print(observation)
+
+            action = RL.choose_action(observation)
 
             # RL take action and get next observation and reward
             observation_, reward, done = env.step(action)
 
             # RL learn from this transition
-            RL.learn(str(observation), action, reward, str(observation_))
+            RL.store_transition(observation, action, reward, observation_)
 
             # swap observation
             observation = observation_
@@ -39,7 +41,14 @@ def update():
 
 if __name__ == "__main__":
     env = Maze()
-    RL = QLearningTable(actions=list(range(env.n_actions)))
+    RL = DeepQNetwork(env.n_actions, env.n_features,
+                      learning_rate=0.01,
+                      reward_decay=0.9,
+                      e_greedy=0.9,
+                      replace_target_iter=200,
+                      memory_size=2000,
+                      # output_graph=True
+                      )
 
     env.after(100, update)
     env.mainloop()

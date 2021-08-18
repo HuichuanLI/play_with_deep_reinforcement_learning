@@ -15,7 +15,6 @@ def update():
         while True:
             # fresh env
             env.render()
-
             # RL choose action based on observation
             action = RL.choose_action(str(observation))
 
@@ -39,6 +38,7 @@ def update():
 
 if __name__ == "__main__":
     env = Maze()
+
     RL = QLearningTable(actions=list(range(env.n_actions)))
 
     env.after(100, update)
