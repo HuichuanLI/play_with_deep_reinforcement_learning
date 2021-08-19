@@ -4,11 +4,12 @@
 # @File : main.py
 # @Software: PyCharm
 from maze import Maze
-from DeepQN import DeepQNetwork
+from DeepQN import DoubleDeepQNetwork
 
 
 def update():
     step = 0
+
     for episode in range(100):
         # initial observation
         observation = env.reset()
@@ -18,18 +19,16 @@ def update():
             env.render()
 
             # RL choose action based on observation
-            # print(observation)
 
             action = RL.choose_action(observation)
 
             # RL take action and get next observation and reward
             observation_, reward, done = env.step(action)
+            if (step > 200) and (step % 5 == 0):
+                RL.learn()
 
             # RL learn from this transition
             RL.store_transition(observation, action, reward, observation_)
-
-            if (step > 200) and (step % 5 == 0):
-                RL.learn()
 
             # swap observation
             observation = observation_
@@ -46,14 +45,14 @@ def update():
 
 if __name__ == "__main__":
     env = Maze()
-    RL = DeepQNetwork(env.n_actions, env.n_features,
-                      learning_rate=0.01,
-                      reward_decay=0.9,
-                      e_greedy=0.9,
-                      replace_target_iter=200,
-                      memory_size=2000,
-                      # output_graph=True
-                      )
+    RL = DoubleDeepQNetwork(env.n_actions, env.n_features,
+                            learning_rate=0.01,
+                            reward_decay=0.9,
+                            e_greedy=0.9,
+                            replace_target_iter=200,
+                            memory_size=2000,
+                            # output_graph=True
+                            )
 
     env.after(100, update)
     env.mainloop()

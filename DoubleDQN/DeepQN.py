@@ -9,7 +9,7 @@ np.random.seed(1)
 tf.random.set_seed(1)
 
 
-class DeepQNetwork:
+class DoubleDeepQNetwork:
     def __init__(
             self,
             n_actions,
@@ -89,9 +89,15 @@ class DeepQNetwork:
 
         ## y_true
         # 真实值
+        # DQN直接通过targetnet进行学习，目前通过eval_net进行选择
         q_next = self.target_net.predict(batch_memory[:, -self.n_feature:])
+        q_eval4next = self.eval_net.predict(batch_memory[:, -self.n_feature:])
+        max_act4next = np.argmax(q_eval4next, axis=1)  # the action that brings the highest value is evaluated by q_eval
+
+        selected_q_next = q_next[row_index, max_act4next]  # Double DQN, select q_next depending on above actions
+
         rewards = batch_memory[:, self.n_feature + 1]
-        q_target = rewards + self.gamma * np.max(q_next, axis=1)
+        q_target = rewards + self.gamma * selected_q_next
 
         return q_target, index
 
