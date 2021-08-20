@@ -14,3 +14,5 @@ Sarsa_lambda_learning/__pycache__/
 DeepQNet/.ipynb_checkpoints/
 
 DeepQNet/__pycache__/
+
+DuelDQN/__pycache__/
