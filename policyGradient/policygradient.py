@@ -60,7 +60,7 @@ class PolicyGradient:
         self.mem_rewards.append(rewards)
 
     @tf.function(input_signature=(
-            tf.TensorSpec(shape=[None, 2], dtype=tf.float64),
+            tf.TensorSpec(shape=[None, None], dtype=tf.float64),
             tf.TensorSpec(shape=[None], dtype=tf.int32),
             tf.TensorSpec(shape=[None], dtype=tf.int32)
     ))
