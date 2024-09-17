@@ -20,3 +20,5 @@ DuelDQN/__pycache__/
 policyGradient/__pycache__/
 
 ActorCrtic/__pycache__/
+
+Reinforce Notebook/envs/__pycache__/

@@ -131,8 +131,8 @@ class DeepQNetwork:
         ## training model
         q_target, index = self.get_q_target(batch_memory)
         batch_memory, q_target, index = tf.convert_to_tensor(batch_memory), \
-                                        tf.convert_to_tensor(q_target), \
-                                        tf.convert_to_tensor(index)
+            tf.convert_to_tensor(q_target), \
+            tf.convert_to_tensor(index)
         self.train_model(batch_memory, q_target, index)
 
         self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
