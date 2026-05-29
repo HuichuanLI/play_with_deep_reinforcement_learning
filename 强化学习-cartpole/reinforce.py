@@ -77,7 +77,7 @@ hidden_dim = 128
 gamma = 0.98
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 env_name = 'CartPole-v1'
-env = gym.make(env_name, render_mode='human')
+env = gym.make(env_name)
 random.seed(0)
 np.random.seed(0)
 env.reset(seed=1)
