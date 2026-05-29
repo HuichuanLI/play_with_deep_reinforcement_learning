@@ -59,7 +59,7 @@ class CliffWalkingEnv:
         return self.y * self.ncol + self.x
 
 
-# DQN 深度TD
+# DQN 网络
 class DQNNet(nn.Module):
     def __init__(self, state_dim, action_dim):
         super().__init__()
@@ -78,6 +78,8 @@ class DQN:
         self.action_dim = action_dim
         self.gamma = gamma
         self.epsilon = epsilon
+        self.epsilon_min = 0.01
+        self.epsilon_decay = 0.995
         self.target_update = target_update
         self.device = device
         self.count = 0
@@ -89,20 +91,24 @@ class DQN:
 
     def take_action(self, state):
         if np.random.random() < self.epsilon:
-            action = np.random.randint(self.action_dim)
+            return np.random.randint(self.action_dim)
         else:
             state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0).to(self.device)
             q_value = self.q_net(state_tensor)
-            action = q_value.argmax().item()
-        return action
+            return q_value.argmax().item()
+
+    def get_best_action(self, state):
+        with torch.no_grad():
+            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0).to(self.device)
+            q_value = self.q_net(state_tensor)
+        return q_value.argmax().item()
 
     def update(self, replay_buffer, batch_size=64):
         state, action, reward, next_state, done = replay_buffer.sample(batch_size)
 
-        # 只改这两行！加 unsqueeze(-1) 把形状从 (64,) 变成 (64, 1)
-        state = torch.tensor(state, dtype=torch.float32).unsqueeze(-1).to(self.device)
-        next_state = torch.tensor(next_state, dtype=torch.float32).unsqueeze(-1).to(self.device)
-
+        # ✅ 这里绝对不能加 unsqueeze(-1)！
+        state = torch.tensor(state, dtype=torch.float32).to(self.device)
+        next_state = torch.tensor(next_state, dtype=torch.float32).to(self.device)
 
         action = torch.tensor(action, dtype=torch.int64).view(-1, 1).to(self.device)
         reward = torch.tensor(reward, dtype=torch.float32).view(-1, 1).to(self.device)
@@ -121,6 +127,10 @@ class DQN:
         if self.count % self.target_update == 0:
             self.target_q_net.load_state_dict(self.q_net.state_dict())
 
+    def decay_epsilon(self):
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
+
 
 # 经验回放池
 class ReplayBuffer:
@@ -135,33 +145,27 @@ class ReplayBuffer:
 
     def sample(self, batch_size):
         batch = random.sample(self.buffer, batch_size)
-        state, action, reward, next_state, done = zip(*batch)
-        return np.array(state), np.array(action), np.array(reward), np.array(next_state), np.array(done)
+        return map(np.array, zip(*batch))
 
     def __len__(self):
         return len(self.buffer)
 
 
-# 策略打印工具
+# 打印策略
 def print_agent(agent, env, action_meaning, disaster=[], end=[]):
     for i in range(env.nrow):
         for j in range(env.ncol):
             state = i * env.ncol + j
+            one_hot = np.zeros(env.nrow * env.ncol, dtype=np.float32)
+            one_hot[state] = 1.0
+
             if state in disaster:
                 print('****', end=' ')
             elif state in end:
                 print('EEEE', end=' ')
             else:
-                if hasattr(agent, "pi"):
-                    act = agent.pi[state]
-                elif isinstance(agent, DQN):
-                    act_idx = agent.take_action(state)
-                    act = [1 if idx == act_idx else 0 for idx in range(4)]
-                else:
-                    act = agent.best_action(state)
-                str_buf = ""
-                for val in act:
-                    str_buf += action_meaning[len(str_buf)] if val > 0 else 'o'
+                act_idx = agent.get_best_action(one_hot)
+                str_buf = ''.join([action_meaning[k] if k == act_idx else 'o' for k in range(4)])
                 print(str_buf, end=' ')
         print()
 
@@ -169,39 +173,52 @@ def print_agent(agent, env, action_meaning, disaster=[], end=[]):
 if __name__ == "__main__":
     env = CliffWalkingEnv()
     action_meaning = ['^', 'v', '<', '>']
-    theta = 0.001
     gamma = 0.9
-    epsilon = 0.1
-    alpha = 0.1
-    episode_num = 1000
+    episode_num = 800
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    state_dim = 1
-    action_dim = 4
-    lr = 1e-3
-    target_update_step = 10
-    buffer_capacity = 5000
-    batch_size = 64
-    agent = DQN(state_dim, action_dim, lr, gamma, epsilon, target_update_step, device)
-    replay_buffer = ReplayBuffer(buffer_capacity)
+    STATE_DIM = env.nrow * env.ncol  # 48
+    ACTION_DIM = 4
+    LR = 1e-3
+    TARGET_UPDATE = 10
+    BUFFER_CAPACITY = 10000
+    BATCH_SIZE = 64
+
+    agent = DQN(STATE_DIM, ACTION_DIM, LR, gamma, 0.1, TARGET_UPDATE, device)
+    replay_buffer = ReplayBuffer(BUFFER_CAPACITY)
     reward_list = []
+
     for ep in tqdm(range(episode_num)):
-        state = env.reset()
+        s = env.reset()
         done = False
         total_r = 0
+
         while not done:
-            action = agent.take_action(state)
-            next_s, r, done = env.step(action)
-            replay_buffer.add((state, action, r, next_s, done))
-            if len(replay_buffer) > batch_size:
-                agent.update(replay_buffer, batch_size)
-            state = next_s
+            one_hot_s = np.zeros(STATE_DIM, dtype=np.float32)
+            one_hot_s[s] = 1.0
+
+            a = agent.take_action(one_hot_s)
+            s_next, r, done = env.step(a)
+
+            one_hot_snext = np.zeros(STATE_DIM, dtype=np.float32)
+            one_hot_snext[s_next] = 1.0
+
+            replay_buffer.add((one_hot_s, a, r, one_hot_snext, done))
+            s = s_next
             total_r += r
+
+        if len(replay_buffer) > BATCH_SIZE:
+            for _ in range(5):
+                agent.update(replay_buffer, BATCH_SIZE)
+
+        agent.decay_epsilon()
         reward_list.append(total_r)
 
     plt.plot(reward_list)
     plt.xlabel("Episode")
     plt.ylabel("Reward")
-    plt.title("Reward Curve")
+    plt.title("DQN Cliff Walking Reward Curve")
     plt.show()
+
+    print("\n最终策略：")
     print_agent(agent, env, action_meaning, list(range(37, 47)), [47])
