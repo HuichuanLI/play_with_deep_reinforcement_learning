@@ -227,35 +227,8 @@ if __name__ == "__main__":
     alpha = 0.1
     episode_num = 1000
 
-    # 选择算法运行，取消注释即可切换
-    # 1.策略迭代
-    # agent = PolicyIteration(env, theta, gamma)
-    # agent.policy_iteration()
-    # print_agent(agent, env, action_meaning, list(range(37,47)), [47])
 
-    # 2.价值迭代
-    # agent = ValueIteration(env, theta, gamma)
-    # agent.value_iteration()
-    # print_agent(agent, env, action_meaning, list(range(37,47)), [47])
 
-    # 3.蒙特卡洛MC
-    # agent = MonteCarlo(12, 4, epsilon, alpha, gamma)
-    # reward_list = []
-    # for ep in tqdm(range(episode_num)):
-    #     state = env.reset()
-    #     done = False
-    #     total_r = 0
-    #     trajectory = []
-    #     while not done:
-    #         action = agent.take_action(state)
-    #         next_s, r, done = env.step(action)
-    #         trajectory.append((state, action, r))
-    #         state = next_s
-    #         total_r += r
-    #     agent.update(trajectory)
-    #     reward_list.append(total_r)
-
-    # # 4.SARSA
     agent = SARSA(12, 4, epsilon, alpha, gamma)
     reward_list = []
     for ep in tqdm(range(episode_num)):
@@ -271,45 +244,6 @@ if __name__ == "__main__":
             total_r += r
         reward_list.append(total_r)
 
-    # # 5.Q-Learning
-    # agent = QLearning(12,4,epsilon,alpha,gamma)
-    # reward_list = []
-    # for ep in tqdm(range(episode_num)):
-    #     state = env.reset()
-    #     done = False
-    #     total_r = 0
-    #     while not done:
-    #         action = agent.take_action(state)
-    #         next_s, r, done = env.step(action)
-    #         agent.update(state, action, r, next_s)
-    #         state = next_s
-    #         total_r += r
-    #     reward_list.append(total_r)
-
-    # 6.DQN
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # state_dim = 1
-    # action_dim = 4
-    # lr = 1e-3
-    # target_update_step = 10
-    # buffer_capacity = 5000
-    # batch_size = 64
-    # agent = DQN(state_dim, action_dim, lr, gamma, epsilon, target_update_step, device)
-    # replay_buffer = ReplayBuffer(buffer_capacity)
-    # reward_list = []
-    # for ep in tqdm(range(episode_num)):
-    #     state = env.reset()
-    #     done = False
-    #     total_r = 0
-    #     while not done:
-    #         action = agent.take_action(state)
-    #         next_s, r, done = env.step(action)
-    #         replay_buffer.add((state, action, r, next_s, done))
-    #         if len(replay_buffer) > batch_size:
-    #             agent.update(replay_buffer, batch_size)
-    #         state = next_s
-    #         total_r += r
-    #     reward_list.append(total_r)
 
     plt.plot(reward_list)
     plt.xlabel("Episode")
