@@ -53,7 +53,6 @@ def print_agent(agent, env, action_meaning, disaster=[], end=[]):
         print()
 
 
-# AI课堂⼩朱⽼师独家讲义
 # Q-learning算法
 class QLearning:
     def __init__(self, ncol, nrow, epsilon, alpha, gamma, n_action=4):
