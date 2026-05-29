@@ -119,7 +119,7 @@ def train_sapo_agent(env, agent, num_episodes, batch_size=5):
 
             # 采集一组数据
             for _ in range(batch_size):
-                state, info = env.reset()
+                state = env.reset()
                 done = False
                 episode_rewards = []
                 episode_states = []
@@ -127,7 +127,7 @@ def train_sapo_agent(env, agent, num_episodes, batch_size=5):
 
                 while not done:
                     action = agent.take_action(state)
-                    next_state, reward, terminated, truncated, _ = env.step(action)
+                    next_state, reward, terminated, truncated = env.step(action)
                     done = terminated or truncated
 
                     episode_states.append(state)
